@@ -1,20 +1,3 @@
-# ============================================================
-#   SCRAPER SENAMHI - Mapa interactivo + Descarga CSV
-#   Curso: Minería de Datos - UPeU
-# ============================================================
-# INSTALACIÓN (una sola vez):
-#   pip install requests flask beautifulsoup4 playwright
-#   python -m playwright install chromium
-#
-# CÓMO USAR:
-#   1. Ejecuta este script en VS Code
-#   2. Se abre el navegador con el mapa del Perú
-#   3. Elige región → aparecen las estaciones en el mapa
-#   4. Haz clic en una estación → se selecciona
-#   5. Pon fecha inicio y fecha fin → "Descargar CSV"
-#   6. El script abre Edge automáticamente y descarga todo
-# ============================================================
-
 import os, time, threading, webbrowser, re, json, subprocess, urllib.request
 import requests as req
 from bs4 import BeautifulSoup
@@ -162,7 +145,7 @@ def api_descargar():
     estado  = data.get("estado", "DIFERIDO")
     ico     = data.get("ico", "M")
     cate    = data.get("cate", "CO")
-    fechas  = data.get("fechas", [])   # lista de {label, value}
+    fechas  = data.get("fechas", [])
 
     if not fechas:
         return jsonify({"error": "No hay fechas para descargar", "exitosos": 0})
@@ -193,7 +176,6 @@ def api_descargar():
             page.goto(url_grafico, wait_until="domcontentloaded")
             time.sleep(2)
 
-            # Ir a pestaña Tabla
             for sel in ['a:has-text("Tabla")', '#tabla-tab', '.nav-link:has-text("Tabla")']:
                 try:
                     el = page.locator(sel).first
@@ -204,7 +186,6 @@ def api_descargar():
                     pass
             time.sleep(1)
 
-            # Esperar token Turnstile (resuelto automáticamente por Edge real)
             print("[PLAYWRIGHT] Esperando Turnstile...")
             for _ in range(60):
                 tokens = page.evaluate("""
@@ -219,8 +200,8 @@ def api_descargar():
 
             # Descargar cada mes
             for item in fechas:
-                filtro_valor = item["value"]   # ej: 202601
-                label        = item["label"]   # ej: 2026-01
+                filtro_valor = item["value"]  
+                label        = item["label"]  
                 archivo      = f"{codigo}_{label}.csv"
                 ruta         = os.path.join(carpeta, archivo)
 
@@ -232,11 +213,9 @@ def api_descargar():
                 print(f"  [DESCARGANDO] {label}...")
 
                 try:
-                    # Seleccionar mes en el combo
                     page.select_option('select[name="CBOFiltro"]', filtro_valor)
                     time.sleep(2)
 
-                    # Esperar iframe con datos
                     frame = None
                     for _ in range(30):
                         try:
